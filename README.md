@@ -11,6 +11,7 @@ Um terminal/shell interativo construído em Python para executar comandos do sis
 - Comandos built-in:
   - `cd`
   - `pwd`
+  - `history`
   - `help`
   - `clear`
   - `exit` / `quit`
@@ -58,4 +59,5 @@ OLÁ
 texto
 
 /home/user $ help
+/home/user $ history
 ```

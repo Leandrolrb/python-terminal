@@ -3,7 +3,7 @@ import subprocess
 from typing import Any
 
 
-BUILTIN_COMMANDS = {"cd", "pwd", "exit", "quit", "help", "clear"}
+BUILTIN_COMMANDS = {"cd", "pwd", "exit", "quit", "help", "clear", "history"}
 
 
 def _help_text() -> str:
@@ -13,13 +13,13 @@ def _help_text() -> str:
         "  pwd        Print current directory\n"
         "  clear      Clear the terminal screen\n"
         "  help       Show this help message\n"
+        "  history    Show command history for this session\n"
         "  exit|quit  Exit the terminal"
     )
 
 
 def run_builtin(command: str, args: list[str], current_dir: str) -> dict[str, Any]:
     result: dict[str, Any] = {
-        "handled": True,
         "exit": False,
         "new_dir": current_dir,
         "output": "",
@@ -60,5 +60,7 @@ def run_builtin(command: str, args: list[str], current_dir: str) -> dict[str, An
         result["new_dir"] = target_path
         return result
 
-    result["handled"] = False
+    if command == "history":
+        return result
+
     return result

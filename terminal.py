@@ -11,39 +11,52 @@ class Terminal:
         self.history: list[str] = []
 
     @staticmethod
-    def _has_shell_operators(command_line: str) -> bool:
+    def _tokenize(command_line: str) -> list[str]:
         lexer = shlex.shlex(command_line, posix=True, punctuation_chars="|&<>")
         lexer.whitespace_split = True
-        for token in lexer:
-            if token and set(token) <= {"|", "&", "<", ">"} and any(
-                char in token for char in "|<>"
-            ):
+        return list(lexer)
+
+    @staticmethod
+    def _has_shell_operators(tokens: list[str]) -> bool:
+        for token in tokens:
+            if token and set(token) <= {"|", "&", "<", ">"} and any(char in token for char in "|<>"):
                 return True
         return False
 
     def _run_command(self, command_line: str) -> bool:
-        if not self._has_shell_operators(command_line):
-            try:
-                parts = shlex.split(command_line)
-            except ValueError as error:
-                print(f"Parse error: {error}")
-                return False
+        try:
+            tokens = self._tokenize(command_line)
+            parts = shlex.split(command_line)
+        except ValueError as error:
+            print(f"Parse error: {error}")
+            return False
 
-            if parts:
-                command, args = parts[0], parts[1:]
-                if command in BUILTIN_COMMANDS:
-                    result = run_builtin(command, args, self.current_dir)
-                    self.current_dir = result["new_dir"]
+        has_shell_operators = self._has_shell_operators(tokens)
 
-                    if result["output"]:
-                        print(result["output"])
-                    if result["error"]:
-                        print(result["error"])
+        if not has_shell_operators and parts:
+            command, args = parts[0], parts[1:]
+            if command in BUILTIN_COMMANDS:
+                if command == "history":
+                    for index, entry in enumerate(self.history, start=1):
+                        print(f"{index}: {entry}")
+                    return False
 
-                    return result["exit"]
+                result = run_builtin(command, args, self.current_dir)
+                self.current_dir = result["new_dir"]
+
+                if result["output"]:
+                    print(result["output"])
+                if result["error"]:
+                    print(result["error"])
+
+                return result["exit"]
 
         try:
-            if self._has_shell_operators(command_line):
+            if has_shell_operators:
+                if any(char in command_line for char in (";", "`", "$")):
+                    print("Unsupported shell expression for security reasons.")
+                    return False
+
                 completed = subprocess.run(
                     command_line,
                     shell=True,
@@ -54,7 +67,7 @@ class Terminal:
                 )
             else:
                 completed = subprocess.run(
-                    shlex.split(command_line),
+                    parts,
                     shell=False,
                     cwd=self.current_dir,
                     capture_output=True,
