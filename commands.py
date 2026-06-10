@@ -60,7 +60,4 @@ def run_builtin(command: str, args: list[str], current_dir: str) -> dict[str, An
         result["new_dir"] = target_path
         return result
 
-    if command == "history":
-        return result
-
     return result

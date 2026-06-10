@@ -12,29 +12,31 @@ class Terminal:
 
     @staticmethod
     def _tokenize(command_line: str) -> list[str]:
-        lexer = shlex.shlex(command_line, posix=True, punctuation_chars="|&<>")
+        lexer = shlex.shlex(command_line, posix=True, punctuation_chars="|<>")
         lexer.whitespace_split = True
         return list(lexer)
 
     @staticmethod
     def _has_shell_operators(tokens: list[str]) -> bool:
         for token in tokens:
-            if token and set(token) <= {"|", "&", "<", ">"} and any(char in token for char in "|<>"):
+            if token and set(token) <= {"|", "<", ">"} and any(char in token for char in "|<>"):
                 return True
         return False
 
     def _run_command(self, command_line: str) -> bool:
         try:
             tokens = self._tokenize(command_line)
-            parts = shlex.split(command_line)
         except ValueError as error:
             print(f"Parse error: {error}")
             return False
 
+        if not tokens:
+            return False
+
         has_shell_operators = self._has_shell_operators(tokens)
 
-        if not has_shell_operators and parts:
-            command, args = parts[0], parts[1:]
+        if not has_shell_operators:
+            command, args = tokens[0], tokens[1:]
             if command in BUILTIN_COMMANDS:
                 if command == "history":
                     for index, entry in enumerate(self.history, start=1):
@@ -53,7 +55,8 @@ class Terminal:
 
         try:
             if has_shell_operators:
-                if any(char in command_line for char in (";", "`", "$")):
+                blocked_fragments = ("&&", "||", ";", "`", "$", "(", ")", "{", "}", "!")
+                if any(fragment in command_line for fragment in blocked_fragments):
                     print("Unsupported shell expression for security reasons.")
                     return False
 
@@ -67,7 +70,7 @@ class Terminal:
                 )
             else:
                 completed = subprocess.run(
-                    parts,
+                    tokens,
                     shell=False,
                     cwd=self.current_dir,
                     capture_output=True,

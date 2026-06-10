@@ -33,8 +33,8 @@ python -m pip install -r requirements.txt
 
 ## Segurança
 
-Este projeto executa comandos digitados pelo usuário e usa shell para suportar pipes e redirecionamentos.
-Use apenas em ambiente local e confiável.
+Este projeto executa comandos digitados pelo usuário e usa `shell=True` apenas quando detecta pipes/redirecionamentos básicos.
+Mesmo com validações, ainda existe risco se entrada não confiável for permitida. Use apenas localmente e não exponha essa interface para usuários remotos ou input de rede.
 
 ## Uso
 
