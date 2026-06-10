@@ -1,23 +1,40 @@
 # Python Terminal
 
-Um terminal/shell interativo construído em Python que permite executar comandos do sistema com recursos avançados.
+Um terminal/shell interativo construído em Python para executar comandos do sistema.
 
 ## Funcionalidades
 
-- ✅ Execução de comandos do sistema
-- ✅ Navegação de diretórios com `cd`
-- ✅ Histórico de comandos
-- ✅ Comandos built-in (pwd, clear, help, exit)
-- ✅ Suporte a pipes e redirecionamento
-- ✅ Interface amigável com prompt do diretório atual
+- Interface interativa com prompt mostrando diretório atual
+- Execução de comandos do sistema via `subprocess`
+- Navegação de diretórios com `cd`
+- Histórico de comandos em memória durante a sessão
+- Comandos built-in:
+  - `cd`
+  - `pwd`
+  - `history`
+  - `help`
+  - `clear`
+  - `exit` / `quit`
+- Suporte básico a pipes e redirecionamentos (`|`, `>`, `<`)
+- Tratamento de erros para comandos inválidos
+
+## Estrutura
+
+- `main.py`
+- `terminal.py`
+- `commands.py`
+- `requirements.txt`
 
 ## Instalação
 
 ```bash
-git clone https://github.com/Leandrolrb/python-terminal.git
-cd python-terminal
 python -m pip install -r requirements.txt
 ```
+
+## Segurança
+
+Este projeto executa comandos via `subprocess` com `shell=False`, incluindo o suporte básico de pipes/redirecionamentos implementado internamente.
+Use apenas localmente e não exponha essa interface para usuários remotos ou input de rede.
 
 ## Uso
 
@@ -25,6 +42,22 @@ python -m pip install -r requirements.txt
 python main.py
 ```
 
-## Desenvolvido por
+Exemplos no terminal:
 
-Leandrolrb
+```bash
+/home/user/project $ pwd
+/home/user/project
+
+/home/user/project $ cd ..
+/home/user $
+
+/home/user $ echo "olá" | tr a-z A-Z
+OLÁ
+
+/home/user $ echo "texto" > saida.txt
+/home/user $ cat < saida.txt
+texto
+
+/home/user $ help
+/home/user $ history
+```
