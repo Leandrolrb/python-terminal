@@ -1,6 +1,7 @@
 import os
 import shlex
 import subprocess
+from pathlib import Path
 
 from commands import BUILTIN_COMMANDS, run_builtin
 
@@ -13,15 +14,99 @@ class Terminal:
     @staticmethod
     def _tokenize(command_line: str) -> list[str]:
         lexer = shlex.shlex(command_line, posix=True, punctuation_chars="|<>")
-        lexer.whitespace_split = True
         return list(lexer)
 
     @staticmethod
     def _has_shell_operators(tokens: list[str]) -> bool:
         for token in tokens:
-            if token and set(token) <= {"|", "<", ">"} and any(char in token for char in "|<>"):
+            if token and set(token) <= {"|", "<", ">"}:
                 return True
         return False
+
+    def _run_pipeline(self, tokens: list[str]) -> None:
+        commands: list[list[str]] = []
+        current: list[str] = []
+        input_file: str | None = None
+        output_file: str | None = None
+        append_output = False
+
+        index = 0
+        while index < len(tokens):
+            token = tokens[index]
+            if token == "|":
+                if not current:
+                    print("Invalid pipeline syntax.")
+                    return
+                commands.append(current)
+                current = []
+            elif token in {"<", ">", ">>"}:
+                if index + 1 >= len(tokens):
+                    print(f"Missing path after {token}")
+                    return
+
+                path_token = tokens[index + 1]
+                index += 1
+                if token == "<":
+                    input_file = path_token
+                else:
+                    output_file = path_token
+                    append_output = token == ">>"
+            else:
+                current.append(token)
+            index += 1
+
+        if current:
+            commands.append(current)
+
+        if not commands:
+            print("No command to execute.")
+            return
+
+        input_data: str | None = None
+        if input_file:
+            input_path = Path(self.current_dir) / input_file
+            try:
+                input_data = input_path.read_text()
+            except OSError as error:
+                print(f"Input redirection error: {error}")
+                return
+
+        for command_parts in commands:
+            try:
+                completed = subprocess.run(
+                    command_parts,
+                    shell=False,
+                    cwd=self.current_dir,
+                    input=input_data,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+            except OSError as error:
+                print(f"Execution error: {error}")
+                return
+
+            if completed.stderr:
+                print(completed.stderr, end="")
+            if completed.returncode != 0:
+                if not completed.stderr:
+                    print(f"Command failed with exit code {completed.returncode}")
+                return
+
+            input_data = completed.stdout
+
+        output_text = input_data or ""
+        if output_file:
+            output_path = Path(self.current_dir) / output_file
+            try:
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                mode = "a" if append_output else "w"
+                with output_path.open(mode) as file_handle:
+                    file_handle.write(output_text)
+            except OSError as error:
+                print(f"Output redirection error: {error}")
+        elif output_text:
+            print(output_text, end="")
 
     def _run_command(self, command_line: str) -> bool:
         try:
@@ -53,30 +138,19 @@ class Terminal:
 
                 return result["exit"]
 
-        try:
-            if has_shell_operators:
-                blocked_fragments = ("&&", "||", ";", "`", "$", "(", ")", "{", "}", "!")
-                if any(fragment in command_line for fragment in blocked_fragments):
-                    print("Unsupported shell expression for security reasons.")
-                    return False
+        if has_shell_operators:
+            self._run_pipeline(tokens)
+            return False
 
-                completed = subprocess.run(
-                    command_line,
-                    shell=True,
-                    cwd=self.current_dir,
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                )
-            else:
-                completed = subprocess.run(
-                    tokens,
-                    shell=False,
-                    cwd=self.current_dir,
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                )
+        try:
+            completed = subprocess.run(
+                tokens,
+                shell=False,
+                cwd=self.current_dir,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
         except OSError as error:
             print(f"Execution error: {error}")
             return False
