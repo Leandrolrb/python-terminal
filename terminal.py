@@ -12,7 +12,14 @@ class Terminal:
 
     @staticmethod
     def _has_shell_operators(command_line: str) -> bool:
-        return any(operator in command_line for operator in ("|", ">", "<"))
+        lexer = shlex.shlex(command_line, posix=True, punctuation_chars="|&<>")
+        lexer.whitespace_split = True
+        for token in lexer:
+            if token and set(token) <= {"|", "&", "<", ">"} and any(
+                char in token for char in "|<>"
+            ):
+                return True
+        return False
 
     def _run_command(self, command_line: str) -> bool:
         if not self._has_shell_operators(command_line):
@@ -33,17 +40,27 @@ class Terminal:
                     if result["error"]:
                         print(result["error"])
 
-                    return bool(result["exit"])
+                    return result["exit"]
 
         try:
-            completed = subprocess.run(
-                command_line,
-                shell=True,
-                cwd=self.current_dir,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
+            if self._has_shell_operators(command_line):
+                completed = subprocess.run(
+                    command_line,
+                    shell=True,
+                    cwd=self.current_dir,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+            else:
+                completed = subprocess.run(
+                    shlex.split(command_line),
+                    shell=False,
+                    cwd=self.current_dir,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
         except OSError as error:
             print(f"Execution error: {error}")
             return False

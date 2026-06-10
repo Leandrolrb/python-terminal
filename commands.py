@@ -1,6 +1,6 @@
 import os
 import subprocess
-from typing import Any, Dict, List
+from typing import Any
 
 
 BUILTIN_COMMANDS = {"cd", "pwd", "exit", "quit", "help", "clear"}
@@ -17,8 +17,8 @@ def _help_text() -> str:
     )
 
 
-def run_builtin(command: str, args: List[str], current_dir: str) -> Dict[str, Any]:
-    result: Dict[str, Any] = {
+def run_builtin(command: str, args: list[str], current_dir: str) -> dict[str, Any]:
+    result: dict[str, Any] = {
         "handled": True,
         "exit": False,
         "new_dir": current_dir,
