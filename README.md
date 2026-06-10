@@ -19,16 +19,21 @@ Um terminal/shell interativo construído em Python para executar comandos do sis
 
 ## Estrutura
 
-- `/home/runner/work/python-terminal/python-terminal/Leandrolrb/python-terminal/main.py`
-- `/home/runner/work/python-terminal/python-terminal/Leandrolrb/python-terminal/terminal.py`
-- `/home/runner/work/python-terminal/python-terminal/Leandrolrb/python-terminal/commands.py`
-- `/home/runner/work/python-terminal/python-terminal/Leandrolrb/python-terminal/requirements.txt`
+- `main.py`
+- `terminal.py`
+- `commands.py`
+- `requirements.txt`
 
 ## Instalação
 
 ```bash
 python -m pip install -r requirements.txt
 ```
+
+## Segurança
+
+Este projeto executa comandos digitados pelo usuário e usa shell para suportar pipes e redirecionamentos.
+Use apenas em ambiente local e confiável.
 
 ## Uso
 

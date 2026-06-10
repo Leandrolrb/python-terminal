@@ -1,4 +1,5 @@
 import os
+import subprocess
 from typing import Any, Dict, List
 
 
@@ -38,7 +39,13 @@ def run_builtin(command: str, args: List[str], current_dir: str) -> Dict[str, An
         return result
 
     if command == "clear":
-        os.system("cls" if os.name == "nt" else "clear")
+        if os.name == "nt":
+            try:
+                subprocess.run(["cmd", "/c", "cls"], check=False)
+            except OSError as error:
+                result["error"] = f"clear: {error}"
+        else:
+            print("\033[2J\033[H", end="")
         return result
 
     if command == "cd":
